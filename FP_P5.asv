@@ -1,0 +1,29 @@
+clc; clear;
+
+% My gai
+Kp = 400; 
+Kd = 9000;  
+Ki = 0.5;
+
+% G = 0.0006557 / s^2 (negative sign is removed to make math easier)
+s = tf('s');
+G = 0.0006557 / s^2;
+C = Kp + Ki/s + Kd*s;
+
+% Create the Closed-Loop Transfer Function
+H = feedback(C*G, 1);
+
+% Plot the response to a 10m step
+figure;
+step(10*H); % Multiplying by 10 for the 10-meter height increase
+grid on;
+
+info = stepinfo(10*H);
+display(info);
+%final_val = dcgain(H) * 10; % Multiply by your 10m input\
+%ss_error = 10 - final_val;
+
+[y, t] = step(10 * H); % This saves the output data to 'y'
+actual_final_height = y(end); % Grabs the very last data point
+ss_error = 10 - actual_final_height;
+display(ss_error);

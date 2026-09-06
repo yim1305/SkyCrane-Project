@@ -1,0 +1,32 @@
+clc; clear;
+K = 0.0006557; % K is the constant term in the numerator
+
+% Case 1
+% 1 + KD * (K*s^2 / (s^3 + 10Ks + K)) = 0
+num1 = [K, 0, 0];          
+den1 = [1, 0, 10*K, K];    
+sys_1 = tf(num1, den1);
+
+% Case 2
+% 1 + KP * (K*s / (s^3 + K*s^2 + K)) = 0
+num2 = [K, 0];          
+den2 = [1, K, 0, K];    
+sys_2 = tf(num2, den2);
+
+% Case 3
+% 1 + KI * (K / (s^3 + 10K*s^2 + 10Ks)) = 0
+num3 = [0, K];          
+den3 = [1, 10*K, 10*K, 0];    
+sys_3 = tf(num3, den3);
+
+figure;
+rlocus(sys_1)
+title('Root Locus: Varying K_D (K_P=10, K_I=1)')
+
+figure;
+rlocus(sys_2)
+title('Root Locus: Varying K_P (K_D=1, K_I=1)')
+
+figure;
+rlocus(sys_3)
+title('Root Locus: Varying K_I (K_D=10, K_P=10)')

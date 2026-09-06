@@ -1,0 +1,122 @@
+clc; clear;
+
+clc; clear; 
+
+w1 = 2.7; h1 = 2.2; d1 = 3; %rover dimensions (meters)
+w2 = 3; h2 = 2.5; d2 = 3;   %sky crane dimensions (meters)
+M = 1025; m = 500;  %rover mass and sky crane mass, respectively (kg)
+L = 25; l1 = m/(M+m)*L; l2 = L - l1;    %cable lengths; l1 = distance from rover to center of mass (meters)
+g = 3.711;  %Martian gravitational acceleration (m/s^2)
+x0 = zeros(12,1);   %initial states
+
+%Moments of inertia for rover and sky crane relative to the center of mass
+Izz1 = 1/12*M*(w1^2+d1^2); Izz2 = 1/12*m*(w2^2+d2^2);%along the axis of the cable
+Iyy1 = 1/12*M*(w1^2+h1^2+12*l1^2); Iyy2 = 1/12*m*(w2^2+h2^2+12*l2^2);   %along the phi axis
+Ixx1 = 1/12*M*(d1^2+h1^2+12*l1^2); Ixx2 = 1/12*m*(d2^2+h2^2+12*l2^2);   %along the theta axis
+
+Izz = Izz1 + Izz2; Iyy = Iyy1 + Iyy2; Ixx = Ixx1 + Ixx2;    %moments of inertia for entire assembly
+
+
+A = [0,0,0,0,0,0,1,0,0,0,0,0;
+     0,0,0,0,0,0,0,1,0,0,0,0;
+     0,0,0,0,0,0,0,0,1,0,0,0;
+     0,0,0,0,0,0,0,0,0,1,0,0;
+     0,0,0,0,0,0,0,0,0,0,1,0;
+     0,0,0,0,0,0,0,0,0,0,0,1;
+     0,0,0,0,-g,0,0,0,0,0,0,0;
+     0,0,0,g,0,0,0,0,0,0,0,0;
+     0,0,0,0,0,0,0,0,0,0,0,0;
+     0,0,0,0,0,0,0,0,0,0,0,0;
+     0,0,0,0,0,0,0,0,0,0,0,0;
+     0,0,0,0,0,0,0,0,0,0,0,0;];
+
+B = [0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     -1/(M+m),0,0
+     0,1/Ixx,0
+     0,0,1/Iyy
+     0,0,0];
+
+C = [1,0,0,0,0,0,0,0,0,0,0,0;
+     0,1,0,0,0,0,0,0,0,0,0,0;
+     0,0,1,0,0,0,0,0,0,0,0,0;
+     0,0,0,1,0,0,0,0,0,0,0,0;
+     0,0,0,0,1,0,0,0,0,0,0,0;
+     0,0,0,0,0,1,0,0,0,0,0,0];
+
+D = [0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     0,0,0
+     0,0,0];
+
+sys = tf(ss(A,B,C,D));
+display(sys);
+
+p = [M, m, Ixx, Iyy, Izz, g, zeros(1,12)];
+
+u1o = (M + m) * g;
+u2o = 0;
+u3o = 0;
+
+simout = sim('nonlinsim','StartTime','0','StopTime','300','FixedStep','0.01');
+
+
+t = simout.t;
+y3 = simout.y3;
+y5 = simout.y5;
+r3 = simout.r3;
+r5 = simout.r5;
+u_vec = simout.u;
+x_vec = simout.state;
+u_0dist = simout.u_no_disturbances;
+
+figure(1);
+subplot(2,1,1);
+plot(t, y3, 'b', 'LineWidth', 1.5); 
+hold on;
+plot(t, r3, 'r--', 'LineWidth', 1.2);
+grid on;
+xlabel('Time (s)');
+ylabel('height (m)');
+title('Output 3 Tracking');
+legend('Actual', 'Reference');
+
+subplot(2,1,2);
+plot(t, u_vec(:,1), 'k', 'LineWidth', 1.5);
+hold on;
+plot(t, u_0dist(:,1), 'r--', 'LineWidth', 1.5);
+grid on;
+xlabel('Time (s)');
+ylabel('Total Thrust (N)');
+title('Control Input');
+legend('input with disturbance', 'input without disturbance');
+
+figure(2);
+subplot(2,1,1);
+plot(t, y5, 'b', 'LineWidth', 1.5);
+hold on;
+plot(t, r5, 'r--', 'LineWidth', 1.2);
+grid on;
+xlabel('Time (s)');
+ylabel('Pitch (rad)');
+title('Output 5 Tracking');
+legend('Actual', 'Reference');
+
+subplot(2,1,2);
+plot(t, u_vec(:,3), 'k', 'LineWidth', 1.5);
+hold on;
+plot(t, u_0dist(:,3), 'r--', 'LineWidth', 1.5);
+grid on;
+xlabel('Time (s)');
+ylabel('Moment Around y-axis (Nm)');
+title('Control Input');
+legend('input with disturbance', 'input without disturbance');
+
